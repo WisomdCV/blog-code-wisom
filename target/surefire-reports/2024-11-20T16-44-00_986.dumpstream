@@ -1,0 +1,5 @@
+# Created at 2024-11-20T16:44:03.642
+Boot Manifest-JAR contains absolute paths in classpath 'D:\Projects\IntelliJ IDEA\blog-code-wisom\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+
