@@ -9,6 +9,7 @@
 <body>
 <!-- HEADER -->
 <div th:include="posts/layout.html::header-app"></div>
+
 <div class="container mt-5">
     <div class="card">
         <div class="card-header">
@@ -19,8 +20,8 @@
         <div class="card-body">
             <p class="card-text" th:text="${post.content}"></p>
         </div>
-        <!-- comment -->
 
+        <!-- Comments Section -->
         <div th:if="${not #lists.isEmpty(comments)}">
             <ul class="list-group list-group-flush">
                 <li th:each="comment : ${comments}" class="list-group-item">
@@ -30,18 +31,19 @@
                     </div>
                     <div class="d-flex justify-content-between">
                         <p class="mb-0" th:text="${comment.content}"></p>
-                        <!-- buttons -->
+                        <!-- User Actions -->
                         <div th:if="${ user != null && user.id == comment.user.id}">
-                            <a class="btn btn-sm btn-warning me-1" th:href="@{/comment/edit/{id} (id=${comment.id}) }"><img src="/img/edit_comment.png" alt="edit_comment"></a>
-                            <a class="btn btn-sm btn-danger me-1" th:href="@{/comment/delete/{id} (id=${comment.id}) }"><img src="/img/delete_comment.png" alt="delete_comment"></a>
+                            <a class="btn btn-sm btn-warning me-1" th:href="@{/comment/edit/{id} (id=${comment.id}) }">
+                                <img src="/img/edit_comment.png" alt="edit_comment">
+                            </a>
+                            <a class="btn btn-sm btn-danger me-1" th:href="@{/comment/delete/{id} (id=${comment.id}) }">
+                                <img src="/img/delete_comment.png" alt="delete_comment">
+                            </a>
                         </div>
                     </div>
                 </li>
             </ul>
         </div>
-
-
-
 
         <div class="card-footer">
             <form th:action="@{/comment/addComment}" method="post">
@@ -57,7 +59,117 @@
         </div>
     </div>
 </div>
+
+<!-- Chat Toggle Button -->
+<button id="toggleChat" style="
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 1000;
+">Chat</button>
+
+<!-- Chat Container -->
+<div id="chatContainer" style="
+    position: fixed;
+    bottom: 60px;
+    left: 10px;
+    width: 300px;
+    height: 400px;
+    background: #f8f9fa;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: none; /* Initially hidden */
+    flex-direction: column;
+    z-index: 999;
+    overflow: hidden;
+">
+    <!-- Messages Section -->
+    <div id="messages" style="flex: 1; overflow-y: auto; padding: 10px; background: #fff;">
+        <!-- Messages will appear here -->
+    </div>
+    <!-- Input Section -->
+    <div style="padding: 10px; background: #f1f1f1; display: flex; gap: 5px;">
+        <input id="userInput" type="text" placeholder="Type a message" style="
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+        ">
+        <button onclick="sendMessage()" style="
+            padding: 8px 12px;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        ">Send</button>
+    </div>
+</div>
+
 <!-- BOOTSTRAP JS -->
 <script th:src="@{/bootstrap/js/bootstrap.bundle.min.js}"></script>
+
+<!-- Chat Script -->
+<script>
+    const chatContainer = document.getElementById("chatContainer");
+    const toggleChat = document.getElementById("toggleChat");
+
+    toggleChat.addEventListener("click", () => {
+        if (chatContainer.style.display === "none" || chatContainer.style.display === "") {
+            chatContainer.style.display = "flex";
+        } else {
+            chatContainer.style.display = "none";
+        }
+    });
+
+    function appendMessage(message, isUser = false) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = isUser ? "user-message" : "ai-message";
+        messageDiv.style.margin = "5px 0";
+        messageDiv.style.padding = "10px";
+        messageDiv.style.borderRadius = "10px";
+        messageDiv.style.background = isUser ? "#007bff" : "#f1f1f1";
+        messageDiv.style.color = isUser ? "white" : "black";
+        messageDiv.textContent = message;
+        document.getElementById("messages").appendChild(messageDiv);
+        document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    }
+
+    async function sendMessage() {
+        const userInput = document.getElementById("userInput");
+        const message = userInput.value.trim();
+
+        if (!message) return;
+
+        appendMessage(message, true);
+        userInput.value = "";
+
+        try {
+            const response = await fetch("http://localhost:3000/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message, context: [] }), // Initialize context as empty
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                appendMessage(data.reply, false);
+            } else {
+                appendMessage("Error en la respuesta del servidor.", false);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            appendMessage("No se pudo conectar con el servidor.", false);
+        }
+    }
+</script>
 </body>
 </html>
