@@ -16,7 +16,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Edit Comment</h5>
                     <form th:action="@{/comment/update}" method="post">
-                        <input type="hidden" name="idComment" th:value="${comment.id}">
+                        <input type="hidden" name="commentId" th:value="${comment.id}">
                         <div class="form-group">
                             <label class="mb-1" for="content">Comment:</label>
                             <textarea class="form-control" id="content" name="content" rows="3" placeholder="Enter your comment" th:text="${comment.content}"></textarea>
