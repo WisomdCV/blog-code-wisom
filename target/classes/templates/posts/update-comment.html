@@ -15,11 +15,12 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Edit Comment</h5>
-                    <form th:action="@{/comment/update}" method="post">
+                    <form th:action="@{/comment/update}" method="post" onsubmit="return validateCommentLength()">
                         <input type="hidden" name="commentId" th:value="${comment.id}">
                         <div class="form-group">
                             <label class="mb-1" for="content">Comment:</label>
                             <textarea class="form-control" id="content" name="content" rows="3" placeholder="Enter your comment" th:text="${comment.content}"></textarea>
+                            <small id="contentHelper" class="form-text text-muted">Max 125 characters. <span id="remainingChars">125</span> characters remaining.</small>
                         </div>
                         <div class="text-right mt-3">
                             <button type="submit" class="btn btn-secondary">Update</button>
@@ -33,5 +34,33 @@
 </div>
 <!-- BOOTSTRAP JS -->
 <script th:src="@{/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script>
+    const MAX_COMMENT_LENGTH = 125;
+
+    function validateCommentLength() {
+        const contentField = document.getElementById("content");
+        if (contentField.value.length > MAX_COMMENT_LENGTH) {
+            alert(`Comment exceeds the maximum limit of ${MAX_COMMENT_LENGTH} characters.`);
+            return false;
+        }
+        return true;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const contentField = document.getElementById("content");
+        const remainingChars = document.getElementById("remainingChars");
+
+        contentField.addEventListener("input", () => {
+            const currentLength = contentField.value.length;
+            const charsLeft = MAX_COMMENT_LENGTH - currentLength;
+            remainingChars.textContent = charsLeft < 0 ? 0 : charsLeft;
+
+            if (currentLength > MAX_COMMENT_LENGTH) {
+                contentField.value = contentField.value.substring(0, MAX_COMMENT_LENGTH);
+                remainingChars.textContent = 0;
+            }
+        });
+    });
+</script>
 </body>
 </html>

@@ -46,11 +46,12 @@
         </div>
 
         <div class="card-footer">
-            <form th:action="@{/comment/addComment}" method="post">
+            <form th:action="@{/comment/addComment}" method="post" onsubmit="return validateCommentLength()">
                 <div class="mb-3">
                     <input type="hidden" name="postId" th:value="${post.id}" />
                     <label for="content" class="form-label">Add a comment:</label>
                     <textarea class="form-control" id="content" name="content" rows="3" autocomplete="off"></textarea>
+                    <small id="contentHelper" class="form-text text-muted">Max 125 characters. <span id="remainingChars">125</span> characters remaining.</small>
                 </div>
                 <div class="text-end">
                     <button type="submit" class="btn btn-secondary">Comment</button>
@@ -117,8 +118,35 @@
 <!-- BOOTSTRAP JS -->
 <script th:src="@{/bootstrap/js/bootstrap.bundle.min.js}"></script>
 
-<!-- Chat Script -->
+<!-- Custom Script -->
 <script>
+    const MAX_COMMENT_LENGTH = 125;
+
+    function validateCommentLength() {
+        const contentField = document.getElementById("content");
+        if (contentField.value.length > MAX_COMMENT_LENGTH) {
+            alert(`Comment exceeds the maximum limit of ${MAX_COMMENT_LENGTH} characters.`);
+            return false;
+        }
+        return true;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const contentField = document.getElementById("content");
+        const remainingChars = document.getElementById("remainingChars");
+
+        contentField.addEventListener("input", () => {
+            const currentLength = contentField.value.length;
+            const charsLeft = MAX_COMMENT_LENGTH - currentLength;
+            remainingChars.textContent = charsLeft < 0 ? 0 : charsLeft;
+
+            if (currentLength > MAX_COMMENT_LENGTH) {
+                contentField.value = contentField.value.substring(0, MAX_COMMENT_LENGTH);
+                remainingChars.textContent = 0;
+            }
+        });
+    });
+
     const chatContainer = document.getElementById("chatContainer");
     const toggleChat = document.getElementById("toggleChat");
 
@@ -129,19 +157,6 @@
             chatContainer.style.display = "none";
         }
     });
-
-    function appendMessage(message, isUser = false) {
-        const messageDiv = document.createElement("div");
-        messageDiv.className = isUser ? "user-message" : "ai-message";
-        messageDiv.style.margin = "5px 0";
-        messageDiv.style.padding = "10px";
-        messageDiv.style.borderRadius = "10px";
-        messageDiv.style.background = isUser ? "#007bff" : "#f1f1f1";
-        messageDiv.style.color = isUser ? "white" : "black";
-        messageDiv.textContent = message;
-        document.getElementById("messages").appendChild(messageDiv);
-        document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    }
 
     async function sendMessage() {
         const userInput = document.getElementById("userInput");
@@ -156,7 +171,7 @@
             const response = await fetch("http://localhost:3000/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message, context: [] }), // Initialize context as empty
+                body: JSON.stringify({ message, context: [] }),
             });
 
             if (response.ok) {
@@ -169,6 +184,32 @@
             console.error("Error:", error);
             appendMessage("No se pudo conectar con el servidor.", false);
         }
+    }
+
+    function appendMessage(message, isUser = false) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = isUser ? "user-message" : "ai-message";
+        messageDiv.style.margin = "5px 0";
+        messageDiv.style.padding = "10px";
+        messageDiv.style.borderRadius = "10px";
+        messageDiv.style.background = isUser ? "#007bff" : "#f1f1f1";
+        messageDiv.style.color = isUser ? "white" : "black";
+        messageDiv.textContent = message;
+
+        if (!isUser) {
+            messageDiv.style.cursor = "pointer";
+            messageDiv.title = "Click to copy";
+            messageDiv.addEventListener("click", () => {
+                navigator.clipboard.writeText(message).then(() => {
+                    alert("Message copied to clipboard!");
+                }).catch((err) => {
+                    console.error("Failed to copy text: ", err);
+                });
+            });
+        }
+
+        document.getElementById("messages").appendChild(messageDiv);
+        document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     }
 </script>
 </body>

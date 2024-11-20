@@ -5,29 +5,6 @@
     <title>Create Post</title>
     <!-- BOOTSTRAP CSS -->
     <link th:href="@{/bootstrap/css/bootstrap.min.css}" rel="stylesheet">
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const contentField = document.getElementById("content");
-            const form = document.querySelector("form");
-
-            contentField.addEventListener("input", () => {
-                const maxLength = 255;
-                const currentLength = contentField.value.length;
-
-                if (currentLength > maxLength) {
-                    alert(`Content cannot exceed ${maxLength} characters. Current length: ${currentLength}`);
-                    contentField.value = contentField.value.substring(0, maxLength);
-                }
-            });
-
-            form.addEventListener("submit", (event) => {
-                if (contentField.value.length > 255) {
-                    event.preventDefault();
-                    alert("Content is too long. Please shorten it to 255 characters.");
-                }
-            });
-        });
-    </script>
 </head>
 <body>
 <!-- HEADER -->
@@ -41,7 +18,7 @@
                     <h3>Create New Post</h3>
                 </div>
                 <div class="card-body">
-                    <form th:action="@{/post/create}" method="post">
+                    <form th:action="@{/post/create}" method="post" onsubmit="return validateContentLength()">
                         <div class="mb-3">
                             <label for="title" class="form-label">Title</label>
                             <input type="text" class="form-control" id="title" name="title" autocomplete="off">
@@ -49,6 +26,7 @@
                         <div class="mb-3">
                             <label for="content" class="form-label">Content</label>
                             <textarea class="form-control" id="content" name="content" rows="20" autocomplete="off"></textarea>
+                            <small id="contentHelper" class="form-text text-muted">Max 255 characters. <span id="remainingChars">255</span> characters remaining.</small>
                         </div>
                         <div class="text-end">
                             <a class="btn btn-danger" th:href="@{/post/home}">Cancel</a>
@@ -118,8 +96,35 @@
 <!-- BOOTSTRAP JS -->
 <script th:src="@{/bootstrap/js/bootstrap.bundle.min.js}"></script>
 
-<!-- Chat Script -->
+<!-- Custom Script -->
 <script>
+    const MAX_CONTENT_LENGTH = 125;
+
+    function validateContentLength() {
+        const contentField = document.getElementById("content");
+        if (contentField.value.length > MAX_CONTENT_LENGTH) {
+            alert(`Content exceeds the maximum limit of ${MAX_CONTENT_LENGTH} characters.`);
+            return false;
+        }
+        return true;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const contentField = document.getElementById("content");
+        const remainingChars = document.getElementById("remainingChars");
+
+        contentField.addEventListener("input", () => {
+            const currentLength = contentField.value.length;
+            const charsLeft = MAX_CONTENT_LENGTH - currentLength;
+            remainingChars.textContent = charsLeft < 0 ? 0 : charsLeft;
+
+            if (currentLength > MAX_CONTENT_LENGTH) {
+                contentField.value = contentField.value.substring(0, MAX_CONTENT_LENGTH);
+                remainingChars.textContent = 0;
+            }
+        });
+    });
+
     const chatContainer = document.getElementById("chatContainer");
     const toggleChat = document.getElementById("toggleChat");
 
@@ -140,6 +145,19 @@
         messageDiv.style.background = isUser ? "#007bff" : "#f1f1f1";
         messageDiv.style.color = isUser ? "white" : "black";
         messageDiv.textContent = message;
+
+        if (!isUser) {
+            messageDiv.style.cursor = "pointer";
+            messageDiv.title = "Click to copy";
+            messageDiv.addEventListener("click", () => {
+                navigator.clipboard.writeText(message).then(() => {
+                    alert("Message copied to clipboard!");
+                }).catch((err) => {
+                    console.error("Failed to copy text: ", err);
+                });
+            });
+        }
+
         document.getElementById("messages").appendChild(messageDiv);
         document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     }
@@ -157,7 +175,7 @@
             const response = await fetch("http://localhost:3000/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message, context: [] }), // Initialize context as empty
+                body: JSON.stringify({ message, context: [] }),
             });
 
             if (response.ok) {

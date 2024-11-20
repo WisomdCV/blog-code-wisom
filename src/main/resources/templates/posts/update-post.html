@@ -27,7 +27,7 @@
                         <div class="mb-3">
                             <label for="content" class="form-label">Content</label>
                             <textarea class="form-control" id="content" name="content" rows="20" th:text="${post.content}"></textarea>
-                            <small class="form-text text-muted">Max 255 characters.</small>
+                            <small id="contentHelper" class="form-text text-muted">Max 255 characters. <span id="remainingChars">255</span> characters remaining.</small>
                         </div>
                         <div class="text-end">
                             <a class="btn btn-danger" th:href="@{/post/mine}">Cancel</a>
@@ -110,6 +110,22 @@
         return true;
     }
 
+    document.addEventListener("DOMContentLoaded", () => {
+        const contentField = document.getElementById("content");
+        const remainingChars = document.getElementById("remainingChars");
+
+        contentField.addEventListener("input", () => {
+            const currentLength = contentField.value.length;
+            const charsLeft = MAX_CONTENT_LENGTH - currentLength;
+            remainingChars.textContent = charsLeft < 0 ? 0 : charsLeft;
+
+            if (currentLength > MAX_CONTENT_LENGTH) {
+                contentField.value = contentField.value.substring(0, MAX_CONTENT_LENGTH);
+                remainingChars.textContent = 0;
+            }
+        });
+    });
+
     const chatContainer = document.getElementById("chatContainer");
     const toggleChat = document.getElementById("toggleChat");
 
@@ -130,6 +146,20 @@
         messageDiv.style.background = isUser ? "#007bff" : "#f1f1f1";
         messageDiv.style.color = isUser ? "white" : "black";
         messageDiv.textContent = message;
+
+        // Add click-to-copy functionality
+        if (!isUser) {
+            messageDiv.style.cursor = "pointer";
+            messageDiv.title = "Click to copy";
+            messageDiv.addEventListener("click", () => {
+                navigator.clipboard.writeText(message).then(() => {
+                    alert("Message copied to clipboard!");
+                }).catch((err) => {
+                    console.error("Failed to copy text: ", err);
+                });
+            });
+        }
+
         document.getElementById("messages").appendChild(messageDiv);
         document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     }
